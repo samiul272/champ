@@ -73,7 +73,7 @@ def combine_guidance_data(cfg):
     guidance_data_folder = cfg.data.guidance_data_folder
 
     guidance_pil_group = dict()
-    with ProcessPoolExecutor(64) as executor:
+    with ProcessPoolExecutor() as executor:
         for guidance_type in guidance_types:
             guidance_pil_group[guidance_type] = []
             guidance_image_lst = sorted(
