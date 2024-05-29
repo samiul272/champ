@@ -9,22 +9,20 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.utils.checkpoint
-from torchvision import transforms
+from PIL import Image
 from diffusers import AutoencoderKL, DDIMScheduler
 from diffusers.utils.import_utils import is_xformers_available
 from omegaconf import OmegaConf
-from PIL import Image
+from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import CLIPVisionModelWithProjection
 
+from models.champ_model import ChampModel
+from models.guidance_encoder import GuidanceEncoder
+from models.mutual_self_attention import ReferenceAttentionControl
 from models.unet_2d_condition import UNet2DConditionModel
 from models.unet_3d import UNet3DConditionModel
-from models.mutual_self_attention import ReferenceAttentionControl
-from models.guidance_encoder import GuidanceEncoder
-from models.champ_model import ChampModel
-
 from pipelines.pipeline_aggregation import MultiGuidance2LongVideoPipeline
-
 from utils.video_utils import resize_tensor_frames, save_videos_grid, pil_list_to_tensor
 
 
@@ -97,7 +95,8 @@ def combine_guidance_data(cfg):
                     ]
 
         for guidance_type in tqdm(guidance_types, desc="Loading guidance data"):
-            guidance_pil_group[guidance_type] = [pil.result().convert("RGB") for pil in guidance_pil_group[guidance_type]]
+            guidance_pil_group[guidance_type] = [pil.result().convert("RGB") for pil in
+                                                 guidance_pil_group[guidance_type]]
 
     # get video length from the first guidance sequence
     first_guidance_length = len(list(guidance_pil_group.values())[0])
@@ -111,18 +110,18 @@ def combine_guidance_data(cfg):
 
 
 def inference(
-    cfg,
-    vae,
-    image_enc,
-    model,
-    scheduler,
-    ref_image_pil,
-    guidance_pil_group,
-    video_length,
-    width,
-    height,
-    device="cuda",
-    dtype=torch.float16,
+        cfg,
+        vae,
+        image_enc,
+        model,
+        scheduler,
+        ref_image_pil,
+        guidance_pil_group,
+        video_length,
+        width,
+        height,
+        device="cuda",
+        dtype=torch.float16,
 ):
     reference_unet = model.reference_unet
     denoising_unet = model.denoising_unet
@@ -263,14 +262,14 @@ def main(cfg):
             raise ValueError(
                 "xformers is not available. Make sure it is installed correctly"
             )
-            
+
     # Compile the models with torch.compile for faster performance
     vae = torch.compile(vae)
     image_enc = torch.compile(image_enc)
     denoising_unet = torch.compile(denoising_unet)
     reference_unet = torch.compile(reference_unet)
     model = torch.compile(model)
-    
+
     ref_image_path = cfg.data.ref_image_path
     ref_image_pil = Image.open(ref_image_path)
     ref_image_w, ref_image_h = ref_image_pil.size
