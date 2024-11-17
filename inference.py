@@ -141,6 +141,7 @@ def inference(
         denoising_unet=denoising_unet,
         **guidance_encoder_group,
         scheduler=scheduler,
+        guidance_process_size=cfg.data.get("guidance_process_size", None)
     )
     pipeline = pipeline.to(device, dtype)
 
